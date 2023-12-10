@@ -1,0 +1,11 @@
+---
+- name: Configure Kali Linux VM
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Print message
+      command: echo -e "\nYou have selected 'set-terminal'\n"
+
+    - name: Display completion message
+      debug:
+        msg: "Upgrade completed."
