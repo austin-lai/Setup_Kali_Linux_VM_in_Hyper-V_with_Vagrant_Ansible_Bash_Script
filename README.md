@@ -1,5 +1,5 @@
 
-# Setup Kali Linux VM with Vagrant and Ansible and Bash Script
+# Setup Kali Linux VM in Hyper-V with Vagrant and Ansible and Bash Script
 
 ```markdown
 > Austin.Lai |
