@@ -13,7 +13,7 @@
 
 <!-- TOC -->
 
-- [Setup Kali Linux VM with Vagrant and Ansible and Bash Script](#setup-kali-linux-vm-with-vagrant-and-ansible-and-bash-script)
+- [Setup Kali Linux VM in Hyper-V with Vagrant and Ansible and Bash Script](#setup-kali-linux-vm-in-hyper-v-with-vagrant-and-ansible-and-bash-script)
     - [Table of Contents](#table-of-contents)
     - [Disclaimer](#disclaimer)
     - [Description](#description)
@@ -70,18 +70,66 @@ The `Vagrantfile` file can be found [here](./Vagrantfile) or below:
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+Vagrant.require_version ">= 1.3.5"
+
 ENV["LC_ALL"] = "en_US.UTF-8"
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-Vagrant.require_version ">= 1.3.5"
+# unless Vagrant.has_plugin?("vagrant-reload")
+#   puts 'Installing vagrant-reload Plugin...'
+#   system('vagrant plugin install vagrant-reload')
+# end
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
-Vagrant.configure("2") do |config|
+# Vagrant.configure("2") do |config|
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  config.vm.provider "hyperv" do |hv|
+      
+    hv.vmname = "kali-box"
+
+    hv.memory = 2048
+    
+    hv.maxmemory = 2048
+    
+    hv.cpus = 2
+
+    hv.enable_enhanced_session_mode = true
+
+    hv.enable_checkpoints = true
+    
+    hv.enable_automatic_checkpoints = true
+  
+    # Enable virtualization extensions for the virtual CPUs
+    hv.enable_virtualization_extensions = true
+
+    hv.linked_clone = true
+
+    # Enable VM integration services (e.g., Copy-VMFile)
+    hv.vm_integration_services = {
+      guest_service_interface: true, # This line enables Copy-VMFile
+      heartbeat: true,
+      key_value_pair_exchange: true,
+      shutdown: true,
+      time_synchronization: true,
+      vss: true,
+    }
+
+    # hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+    hv.auto_start_action = "Nothing" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+
+    hv.auto_stop_action =  "ShutDown" # (ShutDown, TurnOff, Save) - Automatic stop action for VM on host shutdown. Default: ShutDown.
+
+    # hv.customize  ["virtual_switch", { type: "External", name: "External Switch", :adapter => "Ethernet" }]
+    
+  end
 
   # Give a custom name to your Vagrant machine
   config.vm.define "kali-box" do |machine|
@@ -182,7 +230,12 @@ Vagrant.configure("2") do |config|
     # your network.
     # config.vm.network "public_network"
     # config.vm.network "public_network", ip: "192.168.0.1", hostname: true # Network specified with `:hostname` must provide a static ip
-    machine.vm.network "public_network", bridge: "Default Switch"
+    # config.vm.network "private_network", ip: "192.168.50.5", netmask: "24", hostname: true, auto_config: false # Network specified with :hostname must provide a static ip
+
+    # Network Configuration for Hyper-V
+    # Below not working
+    # machine.vm.network "private_network", type: "static", switch: "Hyper-V-Lab_Private", ip: "192.168.50.5", netmask: "24", hostname: true, auto_config: false, ipv6: false
+    machine.vm.network "public_network", bridge: "Default Switch"    
 
     # Share an additional folder to the guest VM. The first argument is
     # the path on the host to the actual folder. The second argument is
@@ -195,48 +248,7 @@ Vagrant.configure("2") do |config|
     # Disable the default share of the current code directory. Doing this
     # provides improved isolation between the vagrant box and your host
     # by making sure your Vagrantfile isn't accessable to the vagrant box.
-    config.vm.synced_folder ".", "/vagrant", disabled: true
-
-    # Provider-specific configuration so you can fine-tune various
-    # backing providers for Vagrant. These expose provider-specific options.
-    machine.vm.provider "hyperv" do |hv|
-        
-      hv.vmname = "kali-box"
-
-      hv.memory = 2048
-      
-      hv.maxmemory = 2048
-      
-      hv.cpus = 2
-
-      hv.enable_enhanced_session_mode = true
-
-      hv.enable_checkpoints = true
-      
-      hv.enable_automatic_checkpoints = true
-    
-      # Enable virtualization extensions for the virtual CPUs
-      hv.enable_virtualization_extensions = true
-
-      hv.linked_clone = true
-
-      # Enable VM integration services (e.g., Copy-VMFile)
-      hv.vm_integration_services = {
-        guest_service_interface: true, # This line enables Copy-VMFile
-        heartbeat: true,
-        key_value_pair_exchange: true,
-        shutdown: true,
-        time_synchronization: true,
-        vss: true,
-      }
-
-      hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
-
-      hv.auto_stop_action =  "ShutDown" # (ShutDown, TurnOff, Save) - Automatic stop action for VM on host shutdown. Default: ShutDown.
-
-      # hv.customize  ["virtual_switch", { type: "External", name: "External Switch", :adapter => "Ethernet" }]
-      
-    end
+    machine.vm.synced_folder ".", "/vagrant", disabled: true
 
     # Enable provisioning with a shell script. Additional provisioners such as
     # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
@@ -269,15 +281,66 @@ Vagrant.configure("2") do |config|
     # config.vm.provision "shell", path: "https://example.com/provisioner.sh"
     ##############
 
-
-    
+    # Use a shell provisioner to install Ansible
+    # machine.vm.provision "shell", inline: <<-SHELL
+    #   sudo apt-get update
+      # sudo apt-get install -y ansible
+    #   sudo update-locale LANG=en_US.UTF-8 LC_CTYPE=en_US.UTF-8
+    #   sudo locale-gen en_US en_US.UTF-8
+    # SHELL
+    # Provisioning with Ansible
+    # Ansible setup for all vm
     # Use :ansible or :ansible_local to
     # select the provisioner of your choice
-    config.vm.provision :ansible do |ansible|
-      ansible.playbook = "playbook.yml"
-      ansible.install_mode = "pip"
+    # machine.vm.provision :ansible do |ansible|
+    #   ansible.playbook = "playbook.yml"
+    # end
+  
+    # Single Command Trigger
+    # config.trigger.after :up do |trigger|
+    #   ...
+    # end
+    # # multiple commands for this trigger
+    # config.trigger.before [:up, :destroy, :halt, :package] do |trigger|
+    #   ...
+    # end
+    # # or defined as a splat list
+    # config.trigger.before :up, :destroy, :halt, :package do |trigger|
+    #   ...
+    # end
+    machine.trigger.after :up do |trigger|
+      trigger.name = "Finished Message ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
+      trigger.warn = "Finished Message ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
+      trigger.info = "Finally Machine is up ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
     end
+    # machine.trigger.after :up do |trigger|
+    #   trigger.name = "Setting up network interface"
+    #   trigger.run = {inline: "bash config_eth0.sh"}
+    # end
   end
+
+  # WORKAROUND for all LIMITATIONS OF VAGRANT (execute a powershell script to handle hyper-v actions before startup of instance)
+  # will be executed before the hyper-Instance will be started  
+  secSwitch = 'Hyper-V-Lab_Private'
+  # Execute a powershell script elevated and privileged (!!)
+  # config.trigger.before :'VagrantPlugins::HyperV::Action::StartInstance', type: :action do |trigger|
+  config.trigger.after :up , type: :action do |trigger|
+    trigger.run = { inline: "./hyperv-config-node.ps1 -VmName kali-box -SwitchName \"'#{secSwitch}'\" " }
+  end
+  ########## OR ##########
+  # config.trigger.before :reload do |trigger|
+  # config.trigger.after :up do |trigger|
+  #   trigger.name = "Changing Hyper-V VM network switch"
+  #   trigger.run = {inline: "./hyperv-config-node.ps1"}
+  # end
+
+  # action trigger for all vm
+  config.trigger.after :up do |trigger|
+    trigger.name = "Finished Message ! OUTSIDE >> config.vm.define \"kali-box\" do |machine| <<"
+    trigger.warn = "Finished Message ! OUTSIDE >> config.vm.define \"kali-box\" do |machine| <<"
+    trigger.info = "Finally Machine is up ! OUTSIDE >> config.vm.define \"kali-box\" do |machine| <<"
+  end
+
 end
 ```
 
@@ -294,11 +357,32 @@ Sample of Ansible Playbook can be found [here](./playbook.yml) or below:
 - name: Configure Kali Linux VM
   hosts: localhost
   become: yes
+  # vars:
+  #   ip_address: '192.168.50.5/24'
   tasks:
     - name: Print message
       command: echo -e "\nYou have selected 'set-terminal'\n"
 
     - name: Display completion message
       debug:
-        msg: "Upgrade completed."
+        msg: "Display completion message."
+
+    - name: Install nmcli
+      apt:
+        name: network-manager
+        state: present
+
+   - name: "Assign static IP"
+      nmcli:
+        conn_name: "eth0"
+        ifname: "eth0"
+        ip4: "192.168.50.5/24"
+        state: present
+
+    # - name: Disable DHCP and enable static IP
+    #   command: nmcli con mod 'System eth0' ipv4.method manual ipv4.addr "{{ ip_address }}"
+
+    - name: Bring up the interface with new settings
+      command: nmcli con up 'System eth0'
+
 ```
