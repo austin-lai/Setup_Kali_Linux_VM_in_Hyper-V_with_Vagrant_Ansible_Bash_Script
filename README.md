@@ -18,6 +18,8 @@
     - [Disclaimer](#disclaimer)
     - [Description](#description)
     - [Vagrantfile](#vagrantfile)
+        - [hyperv-config-node Powershell Script](#hyperv-config-node-powershell-script)
+        - [config_eth0 Bash Script](#config_eth0-bash-script)
         - [Ansible Playbook](#ansible-playbook)
 
 <!-- /TOC -->
@@ -40,7 +42,7 @@ This project/repository is for <span style="color: red; font-weight: bold;">Educ
 
 Setup Kali Linux VM with Vagrant, Ansible, and Bash Script.
 
-The Vagrantfile, Ansible Playbook and configuration provide very basic configuration, you may modified to suit your environment.
+The Vagrantfile, Ansible Playbook, Powershell Script, Bash Script and configuration provide very basic configuration, you may modified to suit your environment.
 
 You may also convert [init script from Setup Kali Linux VM in Hyper-V](https://github.com/austin-lai/Setup_Kali_Linux_VM_in_Hyper-V) into Ansible Playbook or direct use with Vagrantfile.
 
@@ -345,6 +347,79 @@ end
 ```
 
 </details>
+
+<br>
+
+### hyperv-config-node Powershell Script
+
+Sample of hyperv-config-node Powershell Script can be found [here](./hyperv-config-node.ps1) or below:
+
+```powershell
+param (
+    [parameter (Mandatory=$true)]
+    [string]$VmName,
+    [parameter (Mandatory=$true)]
+    [string]$SwitchName
+)
+
+try {
+  Write-Host "------------------ Configure Node with Powershell Script : $VmName -------------------"
+  Write-Host "VM-Machine: $VmName"
+  Write-Host "Add Switch: $SwitchName"
+  $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+  Write-Host "IsAdmin: " $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  $vm = Hyper-V\Get-VM -Name $VmName -ErrorAction "stop" 
+#   Hyper-V\Add-VMNetworkAdapter $vm -Switch $SwitchName  
+  Get-VM 'kali-box' | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName 'Hyper-V-Lab_Private'
+  Write-Host "------------------ Configuration of Node finished  -------------------"
+}
+catch {
+  Write-Host "Failed to set VM's Second Nic: $_"
+}
+
+# Get-VM 'kali-box' | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName 'Hyper-V-Lab_Private'
+```
+
+<br>
+
+### config_eth0 Bash Script
+
+Sample of config_eth0 Bash Script can be found [here](./config_eth0.sh) or below:
+
+```bash
+#!/bin/bash
+
+# Get the current date in the format DDMMYYYY
+current_date=$(date +'%d%m%Y-%H%M')
+
+# The desired static IP address
+IP="192.168.50.5"
+
+# The network interface you want to configure
+IFACE="eth0"
+  
+# Backup /etc/network/interfaces
+sudo -S <<< "kali" cp -v /etc/network/interfaces /etc/network/interfaces.$current_date.bak
+
+# Update apt
+# sudo -S <<< "kali" apt update -y
+
+# Install nmcli
+# sudo -S <<< "kali" apt install -y network-manager
+# sudo -S <<< "kali" systemctl enable NetworkManager.service
+# sudo -S <<< "kali" systemctl start NetworkManager.service 
+
+# Configure the network interface
+# sudo -S <<< "kali" nmcli con mod $IFACE ipv4.addresses $IP/24
+# sudo -S <<< "kali" nmcli con mod $IFACE ipv4.method manual
+
+# Restart the networking service for the changes to take effect
+# sudo -S <<< "kali" systemctl restart NetworkManager.service 
+
+# sudo -S <<< "kali" systemctl restart networking
+sleep 2
+sudo -S <<< "kali" ip a | grep -A 10 $IFACE
+```
 
 <br>
 
