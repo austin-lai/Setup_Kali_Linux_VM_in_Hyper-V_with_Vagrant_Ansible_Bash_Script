@@ -113,6 +113,7 @@ Vagrant.configure("2") do |config|
     # your network.
     # config.vm.network "public_network"
     # config.vm.network "public_network", ip: "192.168.0.1", hostname: true # Network specified with `:hostname` must provide a static ip
+    # config.vm.network "private_network", ip: "192.168.50.5", netmask: "24", hostname: true, auto_config: false # Network specified with :hostname must provide a static ip
     machine.vm.network "public_network", bridge: "Default Switch"
 
     # Share an additional folder to the guest VM. The first argument is
@@ -161,7 +162,8 @@ Vagrant.configure("2") do |config|
         vss: true,
       }
 
-      hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+      # hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+      hv.auto_start_action = "Nothing" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
 
       hv.auto_stop_action =  "ShutDown" # (ShutDown, TurnOff, Save) - Automatic stop action for VM on host shutdown. Default: ShutDown.
 
@@ -206,7 +208,6 @@ Vagrant.configure("2") do |config|
     # select the provisioner of your choice
     config.vm.provision :ansible do |ansible|
       ansible.playbook = "playbook.yml"
-      ansible.install_mode = "pip"
     end
   end
 end
