@@ -14,6 +14,48 @@ Vagrant.require_version ">= 1.3.5"
 # you're doing.
 Vagrant.configure("2") do |config|
 
+    # Provider-specific configuration so you can fine-tune various
+    # backing providers for Vagrant. These expose provider-specific options.
+    config.vm.provider "hyperv" do |hv|
+        
+      hv.vmname = "kali-box"
+
+      hv.memory = 2048
+      
+      hv.maxmemory = 2048
+      
+      hv.cpus = 2
+
+      hv.enable_enhanced_session_mode = true
+
+      hv.enable_checkpoints = true
+      
+      hv.enable_automatic_checkpoints = true
+    
+      # Enable virtualization extensions for the virtual CPUs
+      hv.enable_virtualization_extensions = true
+
+      hv.linked_clone = true
+
+      # Enable VM integration services (e.g., Copy-VMFile)
+      hv.vm_integration_services = {
+        guest_service_interface: true, # This line enables Copy-VMFile
+        heartbeat: true,
+        key_value_pair_exchange: true,
+        shutdown: true,
+        time_synchronization: true,
+        vss: true,
+      }
+
+      # hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+      hv.auto_start_action = "Nothing" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
+
+      hv.auto_stop_action =  "ShutDown" # (ShutDown, TurnOff, Save) - Automatic stop action for VM on host shutdown. Default: ShutDown.
+
+      # hv.customize  ["virtual_switch", { type: "External", name: "External Switch", :adapter => "Ethernet" }]
+      
+    end
+
   # Give a custom name to your Vagrant machine
   config.vm.define "kali-box" do |machine|
 
@@ -127,49 +169,7 @@ Vagrant.configure("2") do |config|
     # Disable the default share of the current code directory. Doing this
     # provides improved isolation between the vagrant box and your host
     # by making sure your Vagrantfile isn't accessable to the vagrant box.
-    config.vm.synced_folder ".", "/vagrant", disabled: true
-
-    # Provider-specific configuration so you can fine-tune various
-    # backing providers for Vagrant. These expose provider-specific options.
-    machine.vm.provider "hyperv" do |hv|
-        
-      hv.vmname = "kali-box"
-
-      hv.memory = 2048
-      
-      hv.maxmemory = 2048
-      
-      hv.cpus = 2
-
-      hv.enable_enhanced_session_mode = true
-
-      hv.enable_checkpoints = true
-      
-      hv.enable_automatic_checkpoints = true
-    
-      # Enable virtualization extensions for the virtual CPUs
-      hv.enable_virtualization_extensions = true
-
-      hv.linked_clone = true
-
-      # Enable VM integration services (e.g., Copy-VMFile)
-      hv.vm_integration_services = {
-        guest_service_interface: true, # This line enables Copy-VMFile
-        heartbeat: true,
-        key_value_pair_exchange: true,
-        shutdown: true,
-        time_synchronization: true,
-        vss: true,
-      }
-
-      # hv.auto_start_action = "StartIfRunning" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
-      hv.auto_start_action = "Nothing" # (Nothing, StartIfRunning, Start) - Automatic start action for VM on host startup.
-
-      hv.auto_stop_action =  "ShutDown" # (ShutDown, TurnOff, Save) - Automatic stop action for VM on host shutdown. Default: ShutDown.
-
-      # hv.customize  ["virtual_switch", { type: "External", name: "External Switch", :adapter => "Ethernet" }]
-      
-    end
+    machine.vm.synced_folder ".", "/vagrant", disabled: true
 
     # Enable provisioning with a shell script. Additional provisioners such as
     # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
@@ -206,7 +206,7 @@ Vagrant.configure("2") do |config|
     
     # Use :ansible or :ansible_local to
     # select the provisioner of your choice
-    config.vm.provision :ansible do |ansible|
+    machine.vm.provision :ansible do |ansible|
       ansible.playbook = "playbook.yml"
     end
   end
