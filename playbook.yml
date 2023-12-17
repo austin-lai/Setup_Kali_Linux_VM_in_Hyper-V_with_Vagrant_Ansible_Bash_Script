@@ -2,10 +2,30 @@
 - name: Configure Kali Linux VM
   hosts: localhost
   become: yes
+  # vars:
+  #   ip_address: '192.168.50.5/24'
   tasks:
     - name: Print message
       command: echo -e "\nYou have selected 'set-terminal'\n"
 
     - name: Display completion message
       debug:
-        msg: "Upgrade completed."
+        msg: "Display completion message."
+
+    - name: Install nmcli
+      apt:
+        name: network-manager
+        state: present
+
+   - name: "Assign static IP"
+      nmcli:
+        conn_name: "eth0"
+        ifname: "eth0"
+        ip4: "192.168.50.5/24"
+        state: present
+
+    # - name: Disable DHCP and enable static IP
+    #   command: nmcli con mod 'System eth0' ipv4.method manual ipv4.addr "{{ ip_address }}"
+
+    - name: Bring up the interface with new settings
+      command: nmcli con up 'System eth0'
