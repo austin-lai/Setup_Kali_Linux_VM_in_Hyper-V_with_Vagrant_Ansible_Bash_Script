@@ -329,9 +329,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 
         # The time in seconds that Vagrant will wait for the machine to gracefully halt when vagrant halt is called. Defaults to 60 seconds.
-        conf.vm.graceful_halt_timeout = 60
+        conf.vm.graceful_halt_timeout = 10
 
-        conf.vm.boot_timeout = 1200 # 20 minutes
+        conf.vm.boot_timeout = 30 # 30 seconds
         
         # The guest OS that will be running within this machine. This defaults to :linux, and Vagrant will auto-detect the proper distro. However, this should be changed to :windows for Windows guests. Vagrant needs to know this information to perform some guest OS-specific things such as mounting folders and configuring networks.
         conf.vm.guest = :linux
@@ -373,10 +373,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # WORKAROUND for all LIMITATIONS OF VAGRANT (execute a powershell script to handle hyper-v actions before startup of instance)
         # will be executed before the hyper-Instance will be started  
         secSwitch = 'Hyper-V-Lab_Private'
-        # conf.trigger.before :'VagrantPlugins::HyperV::Action::StartInstance', type: :action do |trigger|
-        # conf.trigger.after :up , type: :action do |trigger|
-        #   trigger.run = { inline: "./hyperv-config-node.ps1 -VmName kali-box -SwitchName \"'#{secSwitch}'\" " }
-        # end
+        conf.trigger.before :'VagrantPlugins::HyperV::Action::StartInstance', type: :action do |trigger|
+            trigger.name = "Changing Hyper-V VM network switch"
+            trigger.run = { inline: "./hyperv-config-node.ps1 -VmName kali-box -SwitchName \"'#{secSwitch}'\" " }
+        end
         ########## OR ##########
         # conf.trigger.before :reload do |trigger|
         # conf.trigger.after :up do |trigger|
@@ -384,16 +384,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         #   trigger.run = {inline: "./hyperv-config-node.ps1"}
         # end
 
-
+        conf.trigger.after :up do |trigger|
+            trigger.name = "Setting up network interface"
+            trigger.run = {inline: "bash config_eth0.sh"}
+        end
+  
         conf.trigger.after :up do |trigger|
             trigger.name = "Finished Message ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
             trigger.warn = "Finished Message ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
             trigger.info = "Finally Machine is up ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"
-        end
-
-        conf.trigger.after :up do |trigger|
-          trigger.name = "Setting up network interface"
-          trigger.run = {inline: "bash config_eth0.sh"}
         end
 
 
@@ -465,12 +464,8 @@ try {
   
   $vm = Hyper-V\Get-VM -Name $VmName -ErrorAction "stop" 
 
-  # Hyper-V\Add-VMNetworkAdapter $vm -Switch $SwitchName  
+  Hyper-V\Add-VMNetworkAdapter $vm -Switch $SwitchName
   
-  # Get-VM 'kali-box' | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName 'Hyper-V-Lab_Private'
-
-  Get-VM $VmName | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $SwitchName
-
   Write-Host "------------------ Configuration of Node finished  -------------------"
 }
 catch {
@@ -490,12 +485,6 @@ Sample of config_eth0 Bash Script can be found [here](./config_eth0.sh) or below
 # Get the current date in the format DDMMYYYY
 current_date=$(date +'%d%m%Y-%H%M')
 
-# The desired static IP address
-IP="192.168.50.5"
-
-# The network interface you want to configure
-IFACE="eth0"
-  
 # Backup /etc/network/interfaces
 sudo -S <<< "kali" cp -v /etc/network/interfaces /etc/network/interfaces.$current_date.bak
 sudo -S <<< "kali" cat /etc/network/interfaces

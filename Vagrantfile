@@ -258,9 +258,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 
         # The time in seconds that Vagrant will wait for the machine to gracefully halt when vagrant halt is called. Defaults to 60 seconds.
-        conf.vm.graceful_halt_timeout = 60
+        conf.vm.graceful_halt_timeout = 10
 
-        conf.vm.boot_timeout = 1200 # 20 minutes
+        conf.vm.boot_timeout = 30 # 30 seconds
         
         # The guest OS that will be running within this machine. This defaults to :linux, and Vagrant will auto-detect the proper distro. However, this should be changed to :windows for Windows guests. Vagrant needs to know this information to perform some guest OS-specific things such as mounting folders and configuring networks.
         conf.vm.guest = :linux
@@ -302,10 +302,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # WORKAROUND for all LIMITATIONS OF VAGRANT (execute a powershell script to handle hyper-v actions before startup of instance)
         # will be executed before the hyper-Instance will be started  
         secSwitch = 'Hyper-V-Lab_Private'
-        # conf.trigger.before :'VagrantPlugins::HyperV::Action::StartInstance', type: :action do |trigger|
-        # conf.trigger.after :up , type: :action do |trigger|
-        #   trigger.run = { inline: "./hyperv-config-node.ps1 -VmName kali-box -SwitchName \"'#{secSwitch}'\" " }
-        # end
+        conf.trigger.before :'VagrantPlugins::HyperV::Action::StartInstance', type: :action do |trigger|
+            trigger.name = "Changing Hyper-V VM network switch"
+            trigger.run = { inline: "./hyperv-config-node.ps1 -VmName kali-box -SwitchName \"'#{secSwitch}'\" " }
+        end
         ########## OR ##########
         # conf.trigger.before :reload do |trigger|
         # conf.trigger.after :up do |trigger|
@@ -313,11 +313,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         #   trigger.run = {inline: "./hyperv-config-node.ps1"}
         # end
 
-
         conf.trigger.after :up do |trigger|
             trigger.name = "Setting up network interface"
             trigger.run = {inline: "bash config_eth0.sh"}
-          end
+        end
   
         conf.trigger.after :up do |trigger|
             trigger.name = "Finished Message ! INSIDE >> config.vm.define \"kali-box\" do |machine| <<"

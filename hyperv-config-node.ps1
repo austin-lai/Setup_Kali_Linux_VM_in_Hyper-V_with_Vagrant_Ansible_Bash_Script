@@ -16,12 +16,8 @@ try {
   
   $vm = Hyper-V\Get-VM -Name $VmName -ErrorAction "stop" 
 
-  # Hyper-V\Add-VMNetworkAdapter $vm -Switch $SwitchName  
+  Hyper-V\Add-VMNetworkAdapter $vm -Switch $SwitchName
   
-  # Get-VM 'kali-box' | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName 'Hyper-V-Lab_Private'
-
-  Get-VM $VmName | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $SwitchName
-
   Write-Host "------------------ Configuration of Node finished  -------------------"
 }
 catch {
